@@ -14,6 +14,8 @@ AI_SPEED = 180
 -- Define victory score
 VICTORY_SCORE = 10
 
+specialChance = 0
+
 -- Class library that enables the use of objects oriented programming in Lua
 Class = require 'classes/class'
 
@@ -93,8 +95,8 @@ function love.load()
     winningPlayer = 0
 
     -- Initialize player paddles and ball
-    player1 = Paddle(10, 30, 5, 20)
-    AI = Paddle(VIRTUAL_WIDTH - 15, VIRTUAL_HEIGHT - 30, 5, 20)
+    player1 = Paddle(10, 30, 5, 28)
+    AI = Paddle(VIRTUAL_WIDTH - 15, VIRTUAL_HEIGHT - 30, 5, 28)
     ball = Ball(VIRTUAL_WIDTH / 2 - 2, VIRTUAL_HEIGHT / 2 - 2, 4, 4)
 
     -- Set up the state of the game
@@ -149,7 +151,7 @@ function love.update(dt)
             -- Play paddle hit sound effect
             sounds['paddle_hit']:play()
             
-            ball.dX = -ball.dX * 1.08
+            ball.dX = -ball.dX * 1.15
             ball.x = player1.x + 5
 
             -- Keep velocity going in the same direction but randomized
@@ -165,7 +167,7 @@ function love.update(dt)
             -- Play paddle hit sound effect
             sounds['paddle_hit']:play()
             
-            ball.dX = -ball.dX * 1.08
+            ball.dX = -ball.dX * 1.15
             ball.x = AI.x - 4
 
             -- Keep velocity going in the same direction but randomized
@@ -178,40 +180,66 @@ function love.update(dt)
 
         -- detect upper and lower screen boundaries collision and reverse if colide
         if ball.y <= 0 then
-            specialChance = math.random(3)
-            -- 33% of using the ability but it will use it every 3 times at least
-            if (ball.dX < 0 and AI.level > 0) and (specialChance == 3 or AI.skillCount == 2) then
-                -- Special ability will transfer the ball to the other side of the window
-                sounds['power_up']:play() -- Special ability sound effect
-                ball.y = VIRTUAL_HEIGHT
+            if (ball.dX < 0 and AI.level > 0) then 
+                -- 33% of using the ability but it will use it every 3 times at least
+                specialChance = math.random(3)
+
+                if specialChance == 3 or AI.skillCount == 2 then
+                    -- Special ability will transfer the ball to the other side of the window
+                    sounds['power_up']:play() -- Special ability sound effect
+                    ball.y = VIRTUAL_HEIGHT - 4
                 
-                -- Reset skill count
-                AI.skillCount = 0
+                    -- Reset skill count
+                    AI.skillCount = 0
+                else
+                    -- Increase skill count to "charge" skill
+                    AI.skillCount = AI.skillCount + 1
+
+                    -- Play wall hit sound effect
+                    sounds['wall_hit']:play()
+                        
+                    -- Deflect the ball down
+                    ball.y = 0
+                    ball.dY = -ball.dY
+                end
+                specialChance = 0
             else
-                -- Increase skill count to "charge" skill
-                AI.skillCount = AI.skillCount + 1
                 -- Play wall hit sound effect
                 sounds['wall_hit']:play()
-                
+                    
                 -- Deflect the ball down
                 ball.y = 0
                 ball.dY = -ball.dY
             end
         -- -4 to take in consideration the balls size
         elseif ball.y >= VIRTUAL_HEIGHT - 4 then
-            specialChance = math.random(3)
-            -- 33% of using the ability but it will use it every 3 times at least
-            if (ball.dX < 0 and AI.level > 0) and (specialChance == 3 or AI.skillCount == 2) then
-                -- Special ability will transfer the ball to the other side of the window
-                -- Special ability sound effect
-                sounds['power_up']:play()
-                ball.y = 0
-                -- Reset skill count
-                AI.skillCount = 0
-            else
-                -- Increase skill count
-                AI.skillCount = AI.skillCount + 1
+            
+            if (ball.dX < 0 and AI.level > 0) then
+                specialChance = math.random(3)
+                -- 33% of using the ability but it will use it every 3 times at least
+                
+                if (specialChance == 3 or AI.skillCount == 2) then
+                    -- Special ability will transfer the ball to the other side of the window
+                    -- Special ability sound effect
+                    sounds['power_up']:play()
+                    ball.y = 0
+                    -- Reset skill count
+                    AI.skillCount = 0
 
+                else
+                    -- Increase skill count
+                    AI.skillCount = AI.skillCount + 1
+
+                    -- Player wall hit sound effect
+                    sounds['wall_hit']:play()
+                    
+                    -- Deflect the ball up
+                    ball.y = VIRTUAL_HEIGHT - 4
+                    ball.dY = -ball.dY
+
+                end
+                specialChance = 0
+            else
                 -- Player wall hit sound effect
                 sounds['wall_hit']:play()
                 
@@ -254,10 +282,11 @@ function love.update(dt)
         player1Score = player1Score + 1
 
         if gameState ~= '2players' then
+            AI.level = 1
             -- Change AI difficulty based on scores
             if player1Score >= VICTORY_SCORE/2 and player1Score < VICTORY_SCORE/2 + 2 then
                 AI_SPEED = 200
-                AI.level = 1
+                
             elseif player1Score >= VICTORY_SCORE/2 + 2 and player1Score < VICTORY_SCORE - 1 then
                 AI_SPEED = 240
             elseif player1Score >= VICTORY_SCORE - 1 then
@@ -425,9 +454,10 @@ function love.draw()
             -- Red
             love.graphics.setColor(1, 0, 0, 1)
         end
-        AI:render()
-        love.graphics.setColor(1, 1, 1, 1)
     end
+    AI:render()
+    love.graphics.setColor(1, 1, 1, 1)
+    
 
     ball:render()
 
@@ -442,9 +472,9 @@ function displayFPS()
     love.graphics.setColor(0, 1, 0, 1)
     -- Display velocity for development purposes
     love.graphics.print('FPS: ' .. tostring(love.timer.getFPS()), 40, 20)
-    love.graphics.print('ball.dY = ' .. ball.dY, 360, 180)
+    love.graphics.print('chance = ' .. specialChance, 360, 180)
     love.graphics.print('ball.dX = ' .. ball.dX, 360, 200)
-    love.graphics.print('AI.dY = ' .. AI.dY, 360, 220)
+    love.graphics.print('skill count = ' .. AI.skillCount, 360, 220)
     love.graphics.print('AI.lvl = ' .. AI.level, 360, 230)
     love.graphics.setColor(1, 1, 1, 1)
 end
