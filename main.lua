@@ -14,8 +14,6 @@ AI_SPEED = 180
 -- Define victory score
 VICTORY_SCORE = 10
 
-specialChance = 0
-
 -- Class library that enables the use of objects oriented programming in Lua
 Class = require 'classes/class'
 
@@ -49,7 +47,9 @@ local textbox = {
 
 -- Load function; Runs when the game is initialized
 function love.load()
-    
+    -- background image
+    background = love.graphics.newImage("imgs/retro-wave.jpg")
+
     -- Generate pseudo-random number seeding it to the current time
     math.randomseed(os.time())
 
@@ -202,7 +202,6 @@ function love.update(dt)
                     ball.y = 0
                     ball.dY = -ball.dY
                 end
-                specialChance = 0
             else
                 -- Play wall hit sound effect
                 sounds['wall_hit']:play()
@@ -238,7 +237,6 @@ function love.update(dt)
                     ball.dY = -ball.dY
 
                 end
-                specialChance = 0
             else
                 -- Player wall hit sound effect
                 sounds['wall_hit']:play()
@@ -282,13 +280,13 @@ function love.update(dt)
         player1Score = player1Score + 1
 
         if gameState ~= '2players' then
-            AI.level = 1
             -- Change AI difficulty based on scores
             if player1Score >= VICTORY_SCORE/2 and player1Score < VICTORY_SCORE/2 + 2 then
                 AI_SPEED = 200
                 
             elseif player1Score >= VICTORY_SCORE/2 + 2 and player1Score < VICTORY_SCORE - 1 then
                 AI_SPEED = 240
+                AI.level = 1
             elseif player1Score >= VICTORY_SCORE - 1 then
                 AI_SPEED = 280
             end
@@ -376,6 +374,8 @@ function love.keypressed(key)
         -- elseif gameState == 'serve' then
            -- gameState = 'play'
         elseif gameState == 'victory' or gameState == 'defeat' then
+            AI.level = 0
+            AI.skillCount = 0
             -- Restart the game appropriately 
             gameState = 'serve'
 
@@ -407,7 +407,9 @@ function love.draw()
     push:apply('start')
 
     -- Clear the screen with a specific color
-    love.graphics.clear(40 / 255, 45 / 255, 52 / 255, 255 / 255)
+    love.graphics.clear(176 / 255, 38 / 255, 255 / 255, 200 / 255)
+
+    --love.graphics.draw(background, 0, 0)
 
     displayScore()
 
@@ -472,7 +474,7 @@ function displayFPS()
     love.graphics.setColor(0, 1, 0, 1)
     -- Display velocity for development purposes
     love.graphics.print('FPS: ' .. tostring(love.timer.getFPS()), 40, 20)
-    love.graphics.print('chance = ' .. specialChance, 360, 180)
+    -- love.graphics.print('chance = ' .. specialChance, 360, 180)
     love.graphics.print('ball.dX = ' .. ball.dX, 360, 200)
     love.graphics.print('skill count = ' .. AI.skillCount, 360, 220)
     love.graphics.print('AI.lvl = ' .. AI.level, 360, 230)
