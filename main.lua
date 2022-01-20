@@ -48,7 +48,7 @@ local textbox = {
 -- Load function; Runs when the game is initialized
 function love.load()
     -- background image
-    background = love.graphics.newImage("imgs/retro-wave.jpg")
+    background = love.graphics.newImage("imgs/retrowave.jpg")
 
     -- Generate pseudo-random number seeding it to the current time
     math.randomseed(os.time())
